@@ -1,3 +1,4 @@
+import json
 import os
 from dotenv import load_dotenv
 from google import genai
@@ -9,71 +10,67 @@ client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 def generate_trip_plan(destination, days, budget, style):
     prompt = f"""
-You are an expert AI travel planner.
+You are a professional AI Travel Planner.
 
-Create a detailed travel plan for:
+Return ONLY valid JSON.
+Do not write markdown.
+Do not use ```json.
+Do not add explanation.
 
+Return exactly this structure:
+
+{{
+  "overview": {{
+    "destination": "{destination}",
+    "duration": "{days} Days",
+    "budget": "{budget}",
+    "style": "{style}"
+  }},
+  "days": [
+    {{
+      "day": 1,
+      "morning": "Detailed morning plan",
+      "afternoon": "Detailed afternoon plan",
+      "evening": "Detailed evening plan",
+      "estimatedCost": "Estimated cost for this day"
+    }}
+  ],
+  "hotels": [
+    "Hotel suggestion 1",
+    "Hotel suggestion 2",
+    "Hotel suggestion 3"
+  ],
+  "restaurants": [
+    "Restaurant or food suggestion 1",
+    "Restaurant or food suggestion 2",
+    "Restaurant or food suggestion 3"
+  ],
+  "packing": [
+    "Packing item 1",
+    "Packing item 2",
+    "Packing item 3"
+  ],
+  "tips": [
+    "Safety or travel tip 1",
+    "Safety or travel tip 2",
+    "Safety or travel tip 3"
+  ],
+  "hiddenGems": [
+    "Hidden gem 1",
+    "Hidden gem 2"
+  ]
+}}
+
+Generate a practical and detailed itinerary for:
 Destination: {destination}
 Days: {days}
 Budget: {budget}
 Travel Style: {style}
 
-Return the answer in this clean format:
-
-TRIP OVERVIEW
-- Destination:
-- Duration:
-- Budget:
-- Travel Style:
-
-DAY WISE ITINERARY
-
-Day 1
-Morning:
-Afternoon:
-Evening:
-Estimated Cost:
-
-Day 2
-Morning:
-Afternoon:
-Evening:
-Estimated Cost:
-
-HOTEL RECOMMENDATIONS
-- Hotel 1:
-- Hotel 2:
-- Hotel 3:
-
-FOOD RECOMMENDATIONS
-- Dish 1:
-- Dish 2:
-- Restaurant 1:
-- Restaurant 2:
-
-BUDGET BREAKDOWN
-- Stay:
-- Food:
-- Transport:
-- Activities:
-- Shopping:
-- Emergency:
-
-PACKING CHECKLIST
-- Item 1
-- Item 2
-- Item 3
-
-SAFETY TIPS
-- Tip 1
-- Tip 2
-- Tip 3
-
-HIDDEN GEMS
-- Place 1
-- Place 2
-
-Keep it practical, detailed and beginner-friendly.
+Important:
+- Generate exactly {days} day objects inside "days".
+- Keep all values as strings.
+- Return JSON only.
 """
 
     response = client.models.generate_content(
@@ -81,4 +78,12 @@ Keep it practical, detailed and beginner-friendly.
         contents=prompt,
     )
 
-    return response.text
+    clean_text = response.text.strip()
+
+    if clean_text.startswith("```json"):
+        clean_text = clean_text.replace("```json", "").replace("```", "").strip()
+
+    if clean_text.startswith("```"):
+        clean_text = clean_text.replace("```", "").strip()
+
+    return json.loads(clean_text)

@@ -1,5 +1,9 @@
 import { useState } from "react";
+import LoadingCard from "../components/planner/LoadingCard";
+import TripDashboard from "../components/planner/TripDashboard";
+import type { TripPlan } from "../types/trip";
 import api from "../services/api";
+
 
 const Planner = () => {
   const [destination, setDestination] = useState("");
@@ -7,7 +11,7 @@ const Planner = () => {
   const [budget, setBudget] = useState("");
   const [style, setStyle] = useState("Adventure");
   const [loading, setLoading] = useState(false);
-  const [tripPlan, setTripPlan] = useState("");
+  const [tripPlan, setTripPlan] = useState<TripPlan | null>(null);
 
   const generateTrip = async () => {
     if (!destination || !days || !budget || !style) {
@@ -17,7 +21,7 @@ const Planner = () => {
 
     try {
       setLoading(true);
-      setTripPlan("");
+      setTripPlan(null);
 
       const response = await api.post("/api/plan-trip", {
         destination,
@@ -26,13 +30,21 @@ const Planner = () => {
         style,
       });
 
-      setTripPlan(response.data.tripPlan);
+      setTripPlan(response.data.tripPlan as TripPlan);
     } catch (error) {
       console.error(error);
       alert("Failed to generate trip.");
     } finally {
       setLoading(false);
     }
+  };
+
+  const resetForm = () => {
+    setDestination("");
+    setDays("");
+    setBudget("");
+    setStyle("Adventure");
+    setTripPlan(null);
   };
 
   return (
@@ -103,40 +115,10 @@ const Planner = () => {
           >
             {loading ? "Generating..." : "Generate AI Trip"}
           </button>
-          {loading && (
-            <div className="mt-8 rounded-2xl bg-blue-50 p-6 text-center animate-pulse">
-              <p className="text-lg font-semibold text-blue-700">
-                ✨ AI is planning your perfect trip...
-              </p>
 
-              <p className="mt-2 text-slate-600">
-                Finding destinations, hotels, restaurants and travel tips...
-              </p>
-            </div>
-          )}
+          {loading && <LoadingCard />}
 
-          {tripPlan && (
-            <div className="mt-10 rounded-3xl border bg-gradient-to-br from-white to-blue-50 p-8 shadow-xl">
-              <div className="mb-6 flex items-center justify-between">
-                <h2 className="text-3xl font-bold text-slate-900">
-                  ✈️ Your AI Travel Plan
-                </h2>
-
-                <button
-                  onClick={() => navigator.clipboard.writeText(tripPlan)}
-                  className="rounded-full bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-                >
-                  Copy Plan
-                </button>
-              </div>
-
-              <div className="rounded-2xl bg-white p-6 shadow-inner">
-                <pre className="whitespace-pre-wrap font-sans text-slate-700 leading-8">
-                  {tripPlan}
-                </pre>
-              </div>
-            </div>
-          )}
+          {tripPlan && <TripDashboard tripPlan={tripPlan} onReset={resetForm} />}
         </div>
       </div>
     </div>
