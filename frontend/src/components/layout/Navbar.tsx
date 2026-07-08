@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plane, Menu, X } from "lucide-react";
 import { navLinks } from "../../constants/navigation";
@@ -7,16 +7,24 @@ import { navLinks } from "../../constants/navigation";
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const { pathname } = useLocation();
+  const isHome = pathname === "/";
+  const isDarkNav = isHome && !isScrolled;
 
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
     };
 
+    handleScroll();
     window.addEventListener("scroll", handleScroll);
 
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useEffect(() => {
+    setIsMobileOpen(false);
+  }, [pathname]);
 
   return (
     <motion.header
@@ -25,8 +33,10 @@ const Navbar = () => {
       transition={{ duration: 0.5 }}
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         isScrolled
-          ? "bg-white/90 backdrop-blur-md shadow-sm"
-          : "bg-transparent"
+          ? "border-b border-slate-200/80 bg-white/90 shadow-sm backdrop-blur-md"
+          : isDarkNav
+            ? "border-b border-white/10 bg-slate-950/40 backdrop-blur-md"
+            : "bg-transparent"
       }`}
     >
       <nav className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
@@ -36,9 +46,13 @@ const Navbar = () => {
             <Plane size={20} />
           </div>
 
-          <span className="font-bold text-2xl">
+          <span
+            className={`font-bold text-2xl transition-colors duration-300 ${
+              isDarkNav ? "text-white" : "text-slate-900"
+            }`}
+          >
             TravelMind{" "}
-            <span className="text-blue-600">
+            <span className={isDarkNav ? "text-blue-300" : "text-blue-600"}>
               AI
             </span>
           </span>
@@ -52,8 +66,12 @@ const Navbar = () => {
                 to={link.href}
                 className={({ isActive }) =>
                   isActive
-                    ? "text-blue-600 font-semibold"
-                    : "text-gray-700 hover:text-blue-600 transition"
+                    ? isDarkNav
+                      ? "font-semibold text-blue-300"
+                      : "font-semibold text-blue-600"
+                    : isDarkNav
+                      ? "text-white/85 transition hover:text-white"
+                      : "text-gray-700 transition hover:text-blue-600"
                 }
               >
                 {link.label}
@@ -66,14 +84,22 @@ const Navbar = () => {
         <div className="hidden md:flex gap-3">
           <Link
             to="/login"
-            className="border px-5 py-2 rounded-full hover:border-blue-600 hover:text-blue-600 transition"
+            className={`rounded-full border px-5 py-2 transition ${
+              isDarkNav
+                ? "border-white/30 text-white hover:border-white/60 hover:bg-white/10"
+                : "border-slate-300 text-slate-700 hover:border-blue-600 hover:text-blue-600"
+            }`}
           >
             Login
           </Link>
 
           <Link
             to="/get-started"
-            className="bg-blue-600 text-white px-5 py-2 rounded-full hover:bg-blue-700 transition"
+            className={`rounded-full px-5 py-2 transition ${
+              isDarkNav
+                ? "bg-white text-slate-900 hover:bg-blue-50"
+                : "bg-blue-600 text-white hover:bg-blue-700"
+            }`}
           >
             Get Started
           </Link>
@@ -81,8 +107,11 @@ const Navbar = () => {
 
         {/* Mobile Button */}
         <button
-          className="md:hidden"
+          className={`md:hidden transition-colors ${
+            isDarkNav ? "text-white" : "text-slate-800"
+          }`}
           onClick={() => setIsMobileOpen(!isMobileOpen)}
+          aria-label={isMobileOpen ? "Close menu" : "Open menu"}
         >
           {isMobileOpen ? <X /> : <Menu />}
         </button>
